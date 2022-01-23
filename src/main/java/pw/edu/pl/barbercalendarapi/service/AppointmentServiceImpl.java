@@ -3,14 +3,18 @@ package pw.edu.pl.barbercalendarapi.service;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pw.edu.pl.barbercalendarapi.dto.AppointmentDTO;
 import pw.edu.pl.barbercalendarapi.model.Appointment;
 import pw.edu.pl.barbercalendarapi.repo.AppointmentRepo;
 
 @Service
+@Transactional
+@Slf4j
 public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentRepo appointmentRepo;
     private final ClientService clientService;
@@ -28,6 +32,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public Appointment addAppointment(AppointmentDTO appointmentDTO) {
+        log.info("Saving new appointment: {} to the DB", appointmentDTO.getCutType());
         Optional<Appointment> existingAppointment =
                 appointmentRepo.findAppointmentByStartDate(appointmentDTO.getStartDate());
         if (existingAppointment.isEmpty()) {
@@ -44,6 +49,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public Appointment getAppointment(Long id) {
+        log.info("Fetching appointment with id: {}", id);
         return appointmentRepo
                 .findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
@@ -51,11 +57,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<Appointment> getAppointmentsByDate(Date start, Date end) {
+        log.info("Fetching appointments between: {}, and {}", start.toString(), end.toString());
         return appointmentRepo.findAppointmentsByStartDateBetween(start, end);
     }
 
     @Override
     public Appointment editAppointment(AppointmentDTO appointmentDTO) {
+        log.info("Editing appointment: {}", appointmentDTO.getCutType());
         Optional<Appointment> appointmentToEdit = appointmentRepo.findById(appointmentDTO.getId());
         if (appointmentToEdit.isPresent()) {
             Long previousClientId = appointmentToEdit.get().getClientId();
@@ -78,6 +86,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public Appointment deleteAppointment(Long id) {
+        log.info("Deleting appointment with id: {}", id);
         Optional<Appointment> appointment = appointmentRepo.findById(id);
         if (appointment.isPresent()) {
             clientService.deleteAppointmentFromClient(id, appointment.get().getClientId());
